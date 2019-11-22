@@ -40,8 +40,7 @@ module.exports = {
     resetPassword: async (req, res, next) => {
         try {
             let connection = await sqlFunctions.getConnection();
-            const email = req.body.email;
-            const password = req.body.password;
+            const { email, password } = req.body;
             const user = {
                 "email": email,
                 "password": password,
@@ -52,6 +51,38 @@ module.exports = {
         } catch (error) {
             console.log("ERROR RESET PASSWORD!", error);
             res.status(500).json({ message: "Error on reset password!", error: error });
+        }
+    },
+    forgetPassword: async (req, res, next) => {
+        try {
+            let connection = await sqlFunctions.getConnection();
+
+            const { email } = req.body;
+
+            const tempPassword = moment().format('HHmmss');
+
+            const newPassword = tempPassword;
+
+            const verifyEmail = await dao.getUser(connection, email);
+
+            if (verifyEmail) {
+                const user = {
+                    "email": email,
+                    "password": newPassword,
+                    "lastResetPassword": moment().format('YYYY-MM-DD HH:mm:ss')
+                };
+                await dao.resetPassword(connection, user);
+                res.status(200).json({ password: newPassword });
+            } else {
+                console.log("ERROR RESET PASSWORD!", error);
+                res.status(500).json({ message: "Error on reset password!", error });
+            }
+
+            console.log('New Password:', tempPassword);
+
+        } catch (error) {
+            console.log("ERROR FORGET PASSWORD!", error);
+            res.status(500).json({ message: error });
         }
     },
 }

@@ -9,5 +9,6 @@ const controllerLogin = require('./src/app/controllers/login/controller.js');
 router.post('/register', controllerRegister.register);
 router.post('/login', controllerLogin.login);
 router.post('/reset-password', controllerLogin.resetPassword);
+router.post('/forget-password', controllerLogin.forgetPassword);
 
 module.exports = router;
