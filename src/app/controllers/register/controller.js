@@ -1,6 +1,7 @@
 'use strict';
 
 const dao = require('../../../../dao');
+const auth = require('../../utils/auth');
 
 const sqlFunctions = require('../../utils/db');
 
@@ -16,7 +17,7 @@ module.exports = {
             const firstname = req.body.firstname;
             const lastname = req.body.lastname;
             const email = req.body.email;
-            const password = req.body.password;
+            const password = auth.encryptPassword(req.body.password);
 
             const user = {
                 "firstname": firstname,
@@ -27,7 +28,6 @@ module.exports = {
             }
 
             await dao.createUser(connection, user);
-            connection.release();
 
             console.log(user);
 

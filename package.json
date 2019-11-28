@@ -25,8 +25,10 @@
   },
   "homepage": "https://github.com/brunoscosta17/brusc_system#readme",
   "dependencies": {
+    "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.0",
     "express": "^4.17.1",
+    "jsonwebtoken": "^8.5.1",
     "moment": "^2.24.0",
     "mysql": "^2.17.1"
   },

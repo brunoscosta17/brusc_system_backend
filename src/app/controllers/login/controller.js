@@ -1,6 +1,7 @@
 'use strict';
 
 const dao = require('../../../../dao.js');
+const auth = require('../../utils/auth');
 
 const sqlFunctions = require('../../utils/db');
 
@@ -9,47 +10,51 @@ moment.locale('pt-BR');
 
 module.exports = {
     login: async (req, res, next) => {
-        let connection;
         try {
-            connection = await sqlFunctions.getConnection();
+            const connection = await sqlFunctions.getConnection();
 
-            let user = await dao.getUser(connection, req.body.email);
-            const email = req.body.email;
-            console.log(user);
-            console.log(!user);
-            if (!user) {
+            const user = await dao.getUser(connection, req.body.email);
+
+            const isPasswordEqual = auth.decryptPassword(req.body.password, user.password);
+            console.log(isPasswordEqual);
+
+            const { email } = req.body;
+
+            if (!user || isPasswordEqual == false) {
                 res.status(403).json({ message: "Invalid username or password!" });
-            } else {
+            } else if (isPasswordEqual) {
                 const obj = {
                     'id': user.id,
                     'email': email,
                     "date": moment().format('YYYY-MM-DD HH:mm:ss')
                 };
 
+                const token = auth.createToken(user);
+                console.log('token', token);
+
                 await dao.login(connection, obj);
+
                 res.status(200).json({ message: "Login success!" });
 
-                connection.release();
             }
         } catch (error) {
             console.log("Error on authenticate!", error);
             res.status(500).json({ message: "Error on authenticate!", error });
-            connection.release();
         }
     },
-    resetPassword: async (req, res, next) => {
+    updatePassword: async (req, res, next) => {
         try {
             let connection = await sqlFunctions.getConnection();
-            const { email, password } = req.body;
+            const { email, newPassword } = req.body;
             const user = {
                 "email": email,
-                "password": password,
-                "lastResetPassword": moment().format('YYYY-MM-DD HH:mm:ss')
+                "newPassword": newPassword,
+                "lastUpdatePassword": moment().format('YYYY-MM-DD HH:mm:ss')
             };
-            await dao.resetPassword(connection, user);
-            res.status(200).json({ password: user.password });
+            await dao.updatePassword(connection, user);
+            res.status(200).json({ newPassword });
         } catch (error) {
-            console.log("ERROR RESET PASSWORD!", error);
+            console.log("ERROR UPDATE PASSWORD!", error);
             res.status(500).json({ message: "Error on reset password!", error: error });
         }
     },
@@ -68,18 +73,15 @@ module.exports = {
             if (verifyEmail) {
                 const user = {
                     "email": email,
-                    "password": newPassword,
-                    "lastResetPassword": moment().format('YYYY-MM-DD HH:mm:ss')
+                    "newPassword": newPassword,
+                    "lastUpdatePassword": moment().format('YYYY-MM-DD HH:mm:ss')
                 };
-                await dao.resetPassword(connection, user);
-                res.status(200).json({ password: newPassword });
+                await dao.updatePassword(connection, user);
+                res.status(200).json({ message: `New password: ${tempPassword}` });
             } else {
                 console.log("ERROR RESET PASSWORD!", error);
                 res.status(500).json({ message: "Error on reset password!", error });
             }
-
-            console.log('New Password:', tempPassword);
-
         } catch (error) {
             console.log("ERROR FORGET PASSWORD!", error);
             res.status(500).json({ message: error });
